@@ -5,13 +5,19 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "debug-css": "npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
-    "convert": "showdown makehtml -i docs/react-native-bridge.md -o docs/react-native-bridge.html"
+    "debug-css": "npx tailwindcss -i ./src/input.css -o ./build/initial.css --watch",
+    "convert": "showdown makehtml -i docs/react-native-bridge.md -o docs/react-native-bridge.html && showdown makehtml -i docs/react-native-jsi.md -o docs/react-native-jsi.html && showdown makehtml -i docs/react-native-fabric.md -o docs/react-native-fabric.html",
+    "generate": "ts-node scripts/generate.ts"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/jsdom": "^21.1.1",
+    "@types/node": "^20.3.1",
+    "jsdom": "^22.1.0",
     "showdown": "^2.1.0",
-    "tailwindcss": "^3.3.2"
+    "tailwindcss": "^3.3.2",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.1.3"
   }
 }

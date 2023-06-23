@@ -1,0 +1,56 @@
+<html><head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/default.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <link href="../build/initial.css" rel="stylesheet">
+        <script>hljs.highlightAll();</script>
+      </head><body><p>Fabric 是 React Native 新的架构中渲染器，是新架构的主要部分，也是新旧架构中变化最大的地方。了解新知识的一个重要方式是与已知的知识产生联系，形成对比。本文就沿着这个思路，从一张图入手，介绍什么是 Fabric。</p>
+<p>这是关于 React Native 架构解析的系列文章：</p>
+<ul>
+<li><a href="https://juejin.cn/post/7094283295835291656">React Native 架构解析 - Bridge 通信篇</a>[]()</li>
+<li><a href="https://juejin.cn/post/7095271631689351175">React Native 架构解析 - 揭秘 JSI</a></li>
+</ul>
+<h1 id="reactdom">回顾 React-DOM</h1>
+<p>在使用 <code>react</code> 开发的时候，对于 <code>react-dom</code> ，我们都再熟悉不过。Web 端我们几乎都能看到 <code>ReactDOM.render</code> 作为 <code>react</code> 框架渲染的入口。为了方便理解 <code>Fabric</code> 的职责，我们先回顾下 <code>react-dom</code> 做了什么。</p>
+<p><img src="https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/d12401e8344b4012be0b23135943ca7d~tplv-k3u1fbpfcp-watermark.image?" alt="Canvas 1.jpg"></p>
+<p><code>react-dom</code> 作为一个独立的库，担起了 <code>react</code> 和 <code>Web</code> 之间的桥梁。在 <code>react</code> 的 render 和 commit 阶段， <code>react-dom</code> 会创建或更新 DOM 树，并且最终渲染到 <code>Web</code> 页面上。</p>
+<h1 id="fabric">了解 Fabric 的第一张图</h1>
+<p>针对 <code>Fabric</code> ，我们也有类似的流程图：</p>
+<p><img src="https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/b20adb22d4d1435cafb27e448a13e3e9~tplv-k3u1fbpfcp-watermark.image?" alt="Canvas 2.jpg"></p>
+<blockquote>
+  <p>react-dom = react-native-renderer + fabric + native api</p>
+</blockquote>
+<h2 id="reactnativerenderer">React-Native-Renderer</h2>
+<p>在 <code>React-Native</code> 应用中，我们似乎并没有见到类似 <code>ReactDOM.render</code> 的入口，经常看到的是：</p>
+<pre><code>AppRegistry.registerComponent(appName, () =&gt; App);
+</code></pre>
+<p>如果我们在 <code>react-native</code> 源码中顺着 <code>AppRegistry.registerComponent</code> 看下去，可以找到这样一段代码：</p>
+<pre><code>// Libaries/ReactNative/renderApplication.js 
+
+if (fabric) {
+  require('../Renderer/shims/ReactFabric').render(
+    renderable,
+    rootTag,
+    null,
+    useConcurrentRoot,
+  );
+} else {
+  require('../Renderer/shims/ReactNative').render(renderable, rootTag);
+}
+</code></pre>
+<p>看到这里，就看到了熟悉的 <code>render</code> 方法。暴露这个 <code>render</code> 方法的是 <code>ReactFabric</code> 和 <code>ReactNative</code> 这两个文件。这两个也正分别是 React Native 新旧两种架构下的渲染器。</p>
+<blockquote>
+  <p>这里值得一提的是，在 <code>react-native</code> 仓库中的 <code>Renderer</code> 下的源码实际上在 <code>react</code> 库下的 <code>react-native-renderer</code>，这里只是打包后的代码。想进一步参考源码的可以前往 <code>react</code> 仓库。</p>
+</blockquote>
+<p>回到上图，到这里我们就找到了粉红色部分代表的 <code>react-native-renderer</code> 部分作为 JS 侧的 render 入口了。 <code>react-native-renderer</code> 和 <code>react</code> 配合，在 <code>react</code> 的 render 和 commit 阶段共同工作，但是这次不同的是，针对 Native(Android/iOS) 环境，不需要 <code>react-native-renderer</code> 去生成 DOM 树，而是转换为 Native 能理解的树形结构，我们称之为 <code>Shadow Tree</code> 。因为 <code>Shadow Tree</code> 要依赖 <code>Yoga(C++ 库)</code> 去计算 <code>layout</code>，因此 <code>Shadow Tree</code> 要维护在 C++ 侧或原生侧。这就迎来了我们的主角 <code>Fabric</code> 。</p>
+<h2 id="fabric-1">Fabric</h2>
+<p>Fabric 渲染器承担起了生成 <code>Shadow Tree</code> 和调用 <code>Yoga</code> 计算 layout 的主要工作。 <code>react-native-renderer</code> 在与 <code>react</code> 配合时，会有创建和更新 <code>Shadow Tree</code> 节点的需要，这时就只需要调用 <code>Fabric</code> 暴露给 JS 侧的方法，就可以轻松的同步完成。 这里也可以再回顾下在旧架构下的流程图。</p>
+<p><img src="https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/5f3eed146cc74fa48b723369e0a0ad62~tplv-k3u1fbpfcp-watermark.image?" alt="Canvas 3.jpg"></p>
+<p>可以看到 Fabric 的两大转变：</p>
+<ol>
+<li>告别 Bridge 异步通信。得益于 <code>JSI</code> 的存在， <code>react-native-renderer</code> 作为 JS 代码，能够畅通无阻的调用 <code>Fabric</code> 的 C++ 代码。关于 Bridge 通信和 JSI，可以参考之前的文章。</li>
+<li>将渲染逻辑从 Native(Android/iOS) 侧统一到 C++ 侧。这带来的好处是类似的逻辑无需在 Android 和 iOS 两侧各维护一份，同时也为将来接入更多的 Native 平台做好了准备。</li>
+</ol>
+<h2 id="nativeapi">Native API</h2>
+<p>上面说到 Fabric 将存在于 Native 的渲染逻辑整合到了 C++ 侧。但是作为最终要渲染到 Native 的平台上，还是需要 Native 的 API 去完成最后的渲染到屏幕的工作。因此在整体的架构中还是需要基于 Native API 的协作。</p>
+<h1 id="">小结</h1>
+<p>以上从一张与 <code>react-dom</code> 对比的一张图，对 React Native 新架构中 <code>Fabric</code> 扮演的角色作了宏观的介绍，其中先省去了很多细节。希望对大家对 <code>Fabric</code> 的认识有所帮助。</p></body></html>

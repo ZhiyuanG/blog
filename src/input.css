@@ -2,7 +2,7 @@
 
 @layer base {
   h1 {
-    @apply text-2xl;
+    @apply text-2xl mt-9 mb-3;
   }
   h2 {
     @apply text-xl;
@@ -10,15 +10,19 @@
   h3 {
     @apply text-lg;
   }
-  img {
+
+  /* img {
     @apply grayscale contrast-50;
+  } */
+
+  p {
+    @apply my-6;
   }
 
   body {
-    @apply bg-slate-900 font-sans text-slate-300;
+    @apply bg-slate-900 font-sans text-slate-300 translate-x-1/2 w-1/2;
   }
 }
-
 
 @tailwind components;
 @tailwind utilities;
