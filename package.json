@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "debug-css": "npx tailwindcss -i ./src/input.css -o ./build/initial.css --watch",
+    "css": "npx tailwindcss -i ./src/input.css -o ./build/initial.css",
     "convert": "showdown makehtml -i docs/react-native-bridge.md -o docs/react-native-bridge.html && showdown makehtml -i docs/react-native-jsi.md -o docs/react-native-jsi.html && showdown makehtml -i docs/react-native-fabric.md -o docs/react-native-fabric.html",
     "generate": "ts-node scripts/generate.ts"
   },
